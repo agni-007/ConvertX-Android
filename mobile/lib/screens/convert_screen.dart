@@ -150,7 +150,7 @@ class _ConvertScreenState extends State<ConvertScreen> {
       Row(children: [
         Expanded(
           child: DropdownButtonFormField<String>(
-            value: _selectedFormat,
+            initialValue: _selectedFormat,
             hint: const Text('Select output format'),
             decoration: const InputDecoration(
               border: OutlineInputBorder(),

@@ -51,7 +51,7 @@ class _PresetsScreenState extends State<PresetsScreen> {
         title: Text(preset.name),
         subtitle: Text(preset.outputFormat.toUpperCase()),
         trailing: preset.isBuiltin
-            ? Chip(label: const Text('Built-in', style: TextStyle(fontSize: 10)), visualDensity: VisualDensity.compact)
+            ? const Chip(label: Text('Built-in', style: TextStyle(fontSize: 10)), visualDensity: VisualDensity.compact)
             : IconButton(
                 icon: const Icon(Icons.delete_outline, size: 20),
                 onPressed: () async {
@@ -75,7 +75,7 @@ class _PresetsScreenState extends State<PresetsScreen> {
           TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Preset name', border: OutlineInputBorder())),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            value: selectedFormat,
+            initialValue: selectedFormat,
             hint: const Text('Output format'),
             decoration: const InputDecoration(border: OutlineInputBorder()),
             items: ['jpg', 'png', 'webp', 'pdf', 'mp4', 'mp3', 'csv', 'xlsx']

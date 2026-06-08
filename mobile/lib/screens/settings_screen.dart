@@ -44,11 +44,11 @@ class SettingsScreen extends StatelessWidget {
             ]),
           ),
           const SizedBox(height: 16),
-          Card(
+          const Card(
             child: ListTile(
-              leading: const Icon(Icons.info_outline),
-              title: const Text('ConvertX for Android'),
-              subtitle: const Text('Version 1.0.0 · Universal file converter'),
+              leading: Icon(Icons.info_outline),
+              title: Text('ConvertX for Android'),
+              subtitle: Text('Version 1.0.0 · Universal file converter'),
             ),
           ),
         ],

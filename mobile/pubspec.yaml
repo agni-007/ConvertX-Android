@@ -20,9 +20,6 @@ dependencies:
   # Excel read/write (pure Dart)
   excel: ^4.0.6
 
-  # Media conversion via bundled FFmpeg (min = no GPL codecs, smaller APK)
-  # 6.x Maven artifacts are unavailable; 5.1.0 is the last stable LTS release
-  ffmpeg_kit_flutter_min: 5.1.0
 
   # File picking via Android SAF
   file_picker: ^8.0.0+1

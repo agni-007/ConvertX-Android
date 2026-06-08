@@ -19,16 +19,13 @@ pluginManagement {
 
 plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
-    id("com.android.application") version "8.9.0" apply false
-    id("org.jetbrains.kotlin.android") version "1.9.25" apply false
+    id("com.android.application") version "8.11.1" apply false
 }
 
 dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        // ffmpeg_kit_flutter native AAR artifacts
-        maven { url = uri("https://jitpack.io") }
     }
 }
 

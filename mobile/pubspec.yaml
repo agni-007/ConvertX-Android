@@ -1,0 +1,55 @@
+name: convertx
+description: ConvertX — Universal offline file converter for Android.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Image processing (pure Dart)
+  image: ^4.1.7
+
+  # PDF generation (pure Dart)
+  pdf: ^3.10.8
+  printing: ^5.12.0
+
+  # Excel read/write (pure Dart)
+  excel: ^4.0.6
+
+  # Media conversion via bundled FFmpeg (min = no GPL codecs, smaller APK)
+  ffmpeg_kit_flutter_min: ^6.0.3
+
+  # File picking via Android SAF
+  file_picker: ^8.0.0+1
+
+  # App directory resolution
+  path_provider: ^2.1.2
+
+  # SQLite for history + presets
+  sqflite: ^2.3.3+1
+
+  # Permission handling (READ_MEDIA_*)
+  permission_handler: ^11.3.1
+
+  # Path utilities
+  path: ^1.9.0
+
+  # UUID generation
+  uuid: ^4.4.0
+
+  # Open output files
+  open_filex: ^4.3.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true

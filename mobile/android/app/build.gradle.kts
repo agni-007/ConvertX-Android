@@ -44,6 +44,11 @@ android {
     }
 }
 
+dependencies {
+    // Play Core stubs — required by Flutter's deferred component engine at R8 time
+    implementation("com.google.android.play:core:1.10.3")
+}
+
 flutter {
     source = "../.."
 }

@@ -4,7 +4,6 @@ mobile/.flutter-plugins
 mobile/.flutter-plugins-dependencies
 mobile/.packages
 mobile/build/
-mobile/pubspec.lock
 mobile/.fvm/
 
 # Android

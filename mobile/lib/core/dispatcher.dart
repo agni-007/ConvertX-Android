@@ -10,14 +10,15 @@ import '../converters/media_converter.dart';
 
 
 
-const _imageOutputFormats = {'jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'gif', 'pdf'};
+// WebP is input-only: the image package has no WebP encoder.
+const _imageOutputFormats = {'jpg', 'jpeg', 'png', 'bmp', 'tiff', 'gif', 'pdf'};
 const _docOutputFormats = {'pdf', 'html'};
 const _dataOutputFormats = {'xlsx', 'csv', 'json', 'yaml'};
 const _mediaOutputFormats = {'mp4', 'mkv', 'webm', 'avi', 'mov', 'mp3', 'aac', 'flac', 'wav', 'ogg'};
 
 const _imageMimes = {
   'image/jpeg', 'image/png', 'image/gif', 'image/bmp',
-  'image/webp', 'image/tiff', 'image/heic', 'image/heif',
+  'image/webp', 'image/tiff',
 };
 const _videoMimes = {
   'video/mp4', 'video/x-matroska', 'video/avi', 'video/quicktime', 'video/webm',
@@ -26,6 +27,10 @@ const _audioMimes = {'audio/mpeg', 'audio/flac', 'audio/ogg', 'audio/wav', 'audi
 const _dataMimes = {
   'text/csv', 'application/json',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+};
+const _textMimes = {
+  'text/plain', 'text/html', 'text/markdown', 'text/csv', 'text/x-yaml',
+  'application/json',
 };
 
 class Dispatcher {
@@ -53,6 +58,12 @@ class Dispatcher {
       final mime = validation.detectedMime;
       final fmt = job.outputFormat.toLowerCase();
 
+      // HEIC decodes only via native codecs — not available in pure Dart.
+      if (mime == 'image/heic' || mime == 'image/heif') {
+        await TempManager.instance.purge(tempOut);
+        return JobResult.failed(jobId: job.id, errorCode: 'NO_CONVERTER', errorMessage: 'HEIC input is not supported on this build. Convert to JPG in the camera app first.');
+      }
+
       // Route to correct converter
       if (_imageMimes.contains(mime) && _imageOutputFormats.contains(fmt)) {
         await ImageConverter.convert(job.inputPath, tempOut, fmt, job.options);
@@ -60,7 +71,7 @@ class Dispatcher {
         await MediaConverter.convert(job.inputPath, tempOut, fmt, job.options);
       } else if (_dataMimes.contains(mime) && _dataOutputFormats.contains(fmt)) {
         await DataConverter.convert(job.inputPath, tempOut, fmt, job.options);
-      } else if (_docOutputFormats.contains(fmt)) {
+      } else if (_textMimes.contains(mime) && _docOutputFormats.contains(fmt)) {
         await DocConverter.convert(job.inputPath, tempOut, fmt, job.options, mime);
       } else {
         await TempManager.instance.purge(tempOut);
@@ -84,6 +95,11 @@ class Dispatcher {
 
     } catch (e) {
       await TempManager.instance.purge(tempOut);
+      // Never leave partial output at the destination (NFR-AND-002).
+      try {
+        final partial = File(finalOut);
+        if (await partial.exists()) await partial.delete();
+      } catch (_) {}
       final ms = DateTime.now().difference(start).inMilliseconds;
       return JobResult.failed(jobId: job.id, errorCode: 'CONVERTER_ERROR', errorMessage: e.toString(), durationMs: ms);
     }

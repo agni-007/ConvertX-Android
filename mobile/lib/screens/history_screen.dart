@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/app_bus.dart';
 import '../models/history_entry.dart';
 import '../services/history_service.dart';
 
@@ -16,12 +17,26 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   void initState() {
     super.initState();
+    AppBus.navIndex.addListener(_onTabChanged);
     _load();
+  }
+
+  @override
+  void dispose() {
+    AppBus.navIndex.removeListener(_onTabChanged);
+    super.dispose();
+  }
+
+  // The shell keeps this screen alive in an IndexedStack, so reload
+  // whenever the History tab becomes visible.
+  void _onTabChanged() {
+    if (AppBus.navIndex.value == 1) _load();
   }
 
   Future<void> _load() async {
     setState(() => _loading = true);
     final entries = await HistoryService.instance.getRecent();
+    if (!mounted) return;
     setState(() { _entries = entries; _loading = false; });
   }
 

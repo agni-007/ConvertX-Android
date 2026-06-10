@@ -1,9 +1,21 @@
 import 'dart:io';
+import 'dart:isolate';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 
 class DocConverter {
   static Future<void> convert(
+    String inputPath,
+    String outputPath,
+    String outputFormat,
+    Map<String, dynamic> options,
+    String inputMime,
+  ) async {
+    // Run in isolate to keep UI thread free (FR-AND-011)
+    await Isolate.run(() => _convert(inputPath, outputPath, outputFormat, options, inputMime));
+  }
+
+  static Future<void> _convert(
     String inputPath,
     String outputPath,
     String outputFormat,

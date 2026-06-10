@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class HistoryEntry {
   final int? id;
   final DateTime createdAt;
@@ -42,7 +44,7 @@ class HistoryEntry {
     'input_name': inputName,
     'input_format': inputFormat,
     'output_format': outputFormat,
-    'settings_json': _encodeJson(settings),
+    'settings_json': jsonEncode(settings),
     'output_size': outputSize,
     'duration_ms': durationMs,
     'success': success ? 1 : 0,
@@ -50,23 +52,11 @@ class HistoryEntry {
   };
 
   static Map<String, dynamic> _parseJson(String s) {
+    if (s.isEmpty) return {};
     try {
-      // dart:convert is available
-      return Map<String, dynamic>.from(
-        (s.isEmpty ? {} : _jsonDecode(s)) as Map,
-      );
+      return Map<String, dynamic>.from(jsonDecode(s) as Map);
     } catch (_) {
       return {};
     }
-  }
-
-  static String _encodeJson(Map<String, dynamic> m) {
-    // Simple JSON encode without dart:convert import here
-    return m.toString();
-  }
-
-  static dynamic _jsonDecode(String s) {
-    // Will be replaced by dart:convert in service layer
-    return {};
   }
 }

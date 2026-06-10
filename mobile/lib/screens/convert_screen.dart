@@ -3,18 +3,20 @@ import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
 import 'package:open_filex/open_filex.dart';
+import '../core/app_bus.dart';
 import '../core/dispatcher.dart';
 import '../models/conversion_job.dart';
 import '../services/history_service.dart';
 
 const _uuid = Uuid();
 
+// Only formats this build can actually produce. WebP is input-only
+// (no pure-Dart encoder); video/audio outputs return in v2 with FFmpeg.
+// Each format appears exactly once — duplicate dropdown values crash Flutter.
 const _formatGroups = {
-  'Images': ['jpg', 'png', 'webp', 'bmp', 'gif', 'tiff', 'pdf'],
+  'Images': ['jpg', 'png', 'bmp', 'gif', 'tiff'],
   'Documents': ['pdf', 'html'],
-  'Data': ['xlsx', 'csv', 'json'],
-  'Video': ['mp4', 'mkv', 'webm', 'avi', 'mov'],
-  'Audio': ['mp3', 'aac', 'flac', 'wav', 'ogg'],
+  'Data': ['xlsx', 'csv', 'json', 'yaml'],
 };
 
 class _FileEntry {
@@ -44,6 +46,31 @@ class _ConvertScreenState extends State<ConvertScreen> {
   final _options = <String, dynamic>{};
   bool _isConverting = false;
 
+  static final _allFormats = _formatGroups.values.expand((f) => f).toSet();
+
+  @override
+  void initState() {
+    super.initState();
+    AppBus.appliedPreset.addListener(_onPresetApplied);
+  }
+
+  @override
+  void dispose() {
+    AppBus.appliedPreset.removeListener(_onPresetApplied);
+    super.dispose();
+  }
+
+  void _onPresetApplied() {
+    final preset = AppBus.appliedPreset.value;
+    if (preset == null || !_allFormats.contains(preset.outputFormat)) return;
+    setState(() {
+      _selectedFormat = preset.outputFormat;
+      _options
+        ..clear()
+        ..addAll(preset.options);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -71,7 +98,7 @@ class _ConvertScreenState extends State<ConvertScreen> {
         const SizedBox(height: 16),
         Text('Select files to convert', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
-        Text('Images, documents, audio, video', style: Theme.of(context).textTheme.bodySmall),
+        Text('Images, documents, spreadsheets, data', style: Theme.of(context).textTheme.bodySmall),
         const SizedBox(height: 24),
         FilledButton.icon(
           onPressed: _pickFiles,
@@ -184,14 +211,14 @@ class _ConvertScreenState extends State<ConvertScreen> {
   Widget _buildOptionsRow() {
     final fmt = _selectedFormat!;
     return Wrap(spacing: 8, runSpacing: 8, children: [
-      if (['jpg', 'jpeg', 'webp'].contains(fmt))
+      if (['jpg', 'jpeg'].contains(fmt))
         _OptionChip(label: 'Quality: ${_options['quality'] ?? 85}%', onTap: () => _showSliderDialog('quality', 'Image Quality', 10, 100, _options['quality'] ?? 85)),
       if (fmt == 'png')
         _OptionChip(label: 'Compress: ${_options['compress_level'] ?? 6}', onTap: () => _showSliderDialog('compress_level', 'Compression Level', 0, 9, _options['compress_level'] ?? 6)),
-      if (['mp4', 'mkv', 'webm'].contains(fmt))
-        _OptionChip(label: 'Quality: ${_options['quality_preset'] ?? 'balanced'}', onTap: () => _showPickerDialog('quality_preset', 'Video Quality', ['quality', 'balanced', 'small'])),
-      if (['mp3', 'aac', 'ogg'].contains(fmt))
-        _OptionChip(label: 'Bitrate: ${_options['audio_bitrate'] ?? '128k'}', onTap: () => _showPickerDialog('audio_bitrate', 'Audio Bitrate', ['64k', '128k', '192k', '320k'])),
+      if (fmt == 'pdf')
+        _OptionChip(label: 'Page: ${_options['page_size'] ?? 'A4'}', onTap: () => _showPickerDialog('page_size', 'Page Size', ['A4', 'Letter'])),
+      if (['jpg', 'jpeg', 'png', 'bmp', 'gif', 'tiff'].contains(fmt))
+        _OptionChip(label: _options['resize_w'] != null ? 'Width: ${_options['resize_w']}px' : 'Resize: original', onTap: () => _showSliderDialog('resize_w', 'Resize Width (px)', 320, 4096, _options['resize_w'] ?? 1600)),
     ]);
   }
 
@@ -204,6 +231,7 @@ class _ConvertScreenState extends State<ConvertScreen> {
         Slider(value: val, min: min, max: max, divisions: (max - min).round(), onChanged: (v) => setSt(() => val = v)),
       ])),
       actions: [
+        TextButton(onPressed: () { setState(() => _options.remove(key)); Navigator.pop(ctx); }, child: const Text('Reset')),
         TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
         FilledButton(onPressed: () { setState(() => _options[key] = val.round()); Navigator.pop(ctx); }, child: const Text('OK')),
       ],
@@ -221,10 +249,11 @@ class _ConvertScreenState extends State<ConvertScreen> {
   }
 
   Future<void> _pickFiles() async {
-    final status = await Permission.storage.request();
-    if (!status.isGranted) {
-      await Permission.manageExternalStorage.request();
-    }
+    // The SAF picker itself needs no runtime permission. Writing to
+    // Download/ needs WRITE_EXTERNAL_STORAGE on API ≤ 29 — request it
+    // best-effort; on API 30+ the request is a no-op and writes to
+    // Download/ are allowed without it.
+    await Permission.storage.request();
     final result = await FilePicker.platform.pickFiles(allowMultiple: true);
     if (result == null) return;
     setState(() {

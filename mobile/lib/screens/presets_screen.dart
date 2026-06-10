@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/app_bus.dart';
 import '../models/preset.dart';
 import '../services/preset_service.dart';
 
@@ -40,16 +41,20 @@ class _PresetsScreenState extends State<PresetsScreen> {
 
   Widget _buildPreset(Preset preset) {
     final colorScheme = Theme.of(context).colorScheme;
+    final badge = preset.outputFormat.isEmpty
+        ? '?'
+        : preset.outputFormat.toUpperCase().substring(0, preset.outputFormat.length.clamp(0, 3));
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
+        onTap: () => _applyPreset(preset),
         leading: CircleAvatar(
           backgroundColor: colorScheme.primaryContainer,
-          child: Text(preset.outputFormat.toUpperCase().substring(0, preset.outputFormat.length.clamp(1, 3)),
+          child: Text(badge,
               style: TextStyle(fontSize: 10, color: colorScheme.onPrimaryContainer, fontWeight: FontWeight.bold)),
         ),
         title: Text(preset.name),
-        subtitle: Text(preset.outputFormat.toUpperCase()),
+        subtitle: Text('${preset.outputFormat.toUpperCase()} · Tap to apply'),
         trailing: preset.isBuiltin
             ? const Chip(label: Text('Built-in', style: TextStyle(fontSize: 10)), visualDensity: VisualDensity.compact)
             : IconButton(
@@ -62,6 +67,14 @@ class _PresetsScreenState extends State<PresetsScreen> {
                 },
               ),
       ),
+    );
+  }
+
+  void _applyPreset(Preset preset) {
+    AppBus.appliedPreset.value = preset;
+    AppBus.navIndex.value = 0;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Preset "${preset.name}" applied'), duration: const Duration(seconds: 2)),
     );
   }
 
@@ -78,7 +91,7 @@ class _PresetsScreenState extends State<PresetsScreen> {
             initialValue: selectedFormat,
             hint: const Text('Output format'),
             decoration: const InputDecoration(border: OutlineInputBorder()),
-            items: ['jpg', 'png', 'webp', 'pdf', 'mp4', 'mp3', 'csv', 'xlsx']
+            items: ['jpg', 'png', 'bmp', 'gif', 'tiff', 'pdf', 'html', 'csv', 'xlsx', 'json', 'yaml']
                 .map((f) => DropdownMenuItem(value: f, child: Text(f.toUpperCase()))).toList(),
             onChanged: (v) => setSt(() => selectedFormat = v),
           ),

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class Preset {
   final int? id;
   final String name;
@@ -17,8 +19,7 @@ class Preset {
     Map<String, dynamic> config = {};
     try {
       final raw = m['config_json'] as String? ?? '{}';
-      // Parsed in service layer with dart:convert
-      config = {'_raw': raw};
+      config = Map<String, dynamic>.from(jsonDecode(raw) as Map);
     } catch (_) {}
     return Preset(
       id: m['id'] as int?,
@@ -29,10 +30,10 @@ class Preset {
     );
   }
 
-  Map<String, dynamic> toMap(String configJson) => {
+  Map<String, dynamic> toMap() => {
     if (id != null) 'id': id,
     'name': name,
     'is_builtin': isBuiltin ? 1 : 0,
-    'config_json': configJson,
+    'config_json': jsonEncode({'output_format': outputFormat, 'options': options}),
   };
 }

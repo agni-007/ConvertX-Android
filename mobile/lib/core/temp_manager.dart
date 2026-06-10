@@ -6,19 +6,27 @@ class TempManager {
   TempManager._();
   static final instance = TempManager._();
 
-  late Directory _tempDir;
+  Directory? _tempDir;
   final _tracked = <String>{};
 
-  Future<void> init() async {
+  Future<Directory> _dir() async {
+    final existing = _tempDir;
+    if (existing != null && existing.existsSync()) return existing;
     final cacheDir = await getTemporaryDirectory();
-    _tempDir = Directory(p.join(cacheDir.path, 'convertx_tmp'));
-    await _tempDir.create(recursive: true);
+    final dir = Directory(p.join(cacheDir.path, 'convertx_tmp'));
+    await dir.create(recursive: true);
+    _tempDir = dir;
+    return dir;
+  }
+
+  Future<void> init() async {
+    await _dir();
   }
 
   Future<String> newTempPath(String suffix) async {
-    await _ensureInit();
+    final dir = await _dir();
     final name = '${DateTime.now().microsecondsSinceEpoch}$suffix';
-    final path = p.join(_tempDir.path, name);
+    final path = p.join(dir.path, name);
     _tracked.add(path);
     return path;
   }
@@ -35,21 +43,19 @@ class TempManager {
     } catch (_) {}
   }
 
+  /// Deletes tracked temp files and any crash leftovers from previous runs
+  /// (FR-AND-012, NFR-AND-003).
   Future<void> purgeAll() async {
     for (final path in List<String>.from(_tracked)) {
       await purge(path);
     }
-    // Also wipe the whole temp dir on startup to clean up crash leftovers
     try {
-      if (_tempDir.existsSync()) {
-        await for (final entity in _tempDir.list()) {
-          try { await entity.delete(recursive: true); } catch (_) {}
-        }
+      final dir = await _dir();
+      await for (final entity in dir.list()) {
+        try {
+          await entity.delete(recursive: true);
+        } catch (_) {}
       }
     } catch (_) {}
-  }
-
-  Future<void> _ensureInit() async {
-    if (!_tempDir.existsSync()) await init();
   }
 }

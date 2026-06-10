@@ -64,21 +64,7 @@ class HistoryService {
 
   Future<List<HistoryEntry>> getRecent({int limit = 200}) async {
     final rows = await _db.query('history', orderBy: 'created_at DESC', limit: limit);
-    return rows.map((r) {
-      final settings = jsonDecode(r['settings_json'] as String? ?? '{}');
-      return HistoryEntry(
-        id: r['id'] as int?,
-        createdAt: DateTime.parse(r['created_at'] as String),
-        inputName: r['input_name'] as String,
-        inputFormat: r['input_format'] as String,
-        outputFormat: r['output_format'] as String,
-        settings: Map<String, dynamic>.from(settings as Map),
-        outputSize: r['output_size'] as int?,
-        durationMs: r['duration_ms'] as int?,
-        success: (r['success'] as int) == 1,
-        errorMessage: r['error_message'] as String?,
-      );
-    }).toList();
+    return rows.map((r) => HistoryEntry.fromMap(Map<String, dynamic>.from(r))).toList();
   }
 
   Future<void> clearAll() => _db.delete('history');

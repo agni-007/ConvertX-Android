@@ -58,8 +58,8 @@ class ImageConverter {
         final level = options['compress_level'] as int? ?? 6;
         outputBytes = Uint8List.fromList(img.encodePng(image, level: level));
       case 'webp':
-        final quality = options['quality'] as int? ?? 80;
-        outputBytes = Uint8List.fromList(img.encodeJpg(image, quality: quality)); // fallback: image pkg webp support varies
+        // The image package decodes WebP but has no WebP encoder.
+        throw UnsupportedError('WebP can be used as input but not as output format.');
       case 'bmp':
         outputBytes = Uint8List.fromList(img.encodeBmp(image));
       case 'gif':

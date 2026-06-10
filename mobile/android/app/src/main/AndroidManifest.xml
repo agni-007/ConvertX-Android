@@ -3,7 +3,9 @@
     <!-- Storage permissions — SRS NFR-017 -->
     <!-- API < 33: broad read/write -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+    <!-- maxSdkVersion 29: API 29 still needs WRITE + requestLegacyExternalStorage
+         to write to Download/; API 30+ allows it without any permission -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
     <!-- API 33+: granular media permissions -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />

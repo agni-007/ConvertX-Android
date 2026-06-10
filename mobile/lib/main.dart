@@ -6,6 +6,7 @@ import 'screens/presets_screen.dart';
 import 'screens/settings_screen.dart';
 import 'services/history_service.dart';
 import 'services/preset_service.dart';
+import 'core/app_bus.dart';
 import 'core/temp_manager.dart';
 
 void main() async {
@@ -79,9 +80,7 @@ class MainShell extends StatefulWidget {
   State<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
-  int _selectedIndex = 0;
-
+class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   final _screens = const [
     ConvertScreen(),
     HistoryScreen(),
@@ -90,12 +89,36 @@ class _MainShellState extends State<MainShell> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    AppBus.navIndex.addListener(_onNavChanged);
+  }
+
+  @override
+  void dispose() {
+    AppBus.navIndex.removeListener(_onNavChanged);
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  void _onNavChanged() => setState(() {});
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Purge temp files when the app is going away (FR-AND-012)
+    if (state == AppLifecycleState.detached) {
+      TempManager.instance.purgeAll();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(index: _selectedIndex, children: _screens),
+      body: IndexedStack(index: AppBus.navIndex.value, children: _screens),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (i) => setState(() => _selectedIndex = i),
+        selectedIndex: AppBus.navIndex.value,
+        onDestinationSelected: (i) => AppBus.navIndex.value = i,
         destinations: const [
           NavigationDestination(icon: Icon(Icons.swap_horiz_outlined), selectedIcon: Icon(Icons.swap_horiz), label: 'Convert'),
           NavigationDestination(icon: Icon(Icons.history_outlined), selectedIcon: Icon(Icons.history), label: 'History'),
